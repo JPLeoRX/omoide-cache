@@ -14,15 +14,35 @@ class ExampleService:
         return result
 
 class Cache:
-    def __init__(self, call_to_execute, max_allowed_size: int = 2, expire_mode: str = 'ACCESS_COUNT_BASED'):
-        self.expire_mode_update_time_based = 'UPDATE_TIME_BASED'
-        self.expire_mode_access_time_based = 'ACCESS_TIME_BASED'
+    def __init__(self,
+                 call_to_execute,
+                 max_allowed_size: int = 2, size_expire_mode: str = 'ACCESS_COUNT_BASED',
+                 expire_by_computed_duration_ms: int = -1, expire_by_access_duration_ms: int = -1):
+        # Constants
+        self.expire_mode_none = 'NONE'
+        self.expire_mode_computed_time_based = 'COMPUTED_TIME_BASED'
+        self.expire_mode_accessed_time_based = 'ACCESSED_TIME_BASED'
         self.expire_mode_access_count_based = 'ACCESS_COUNT_BASED'
 
-        self.max_allowed_size = max_allowed_size # If cache becomes larger than that - results will be removed according to expire mode policy
-        self.expire_mode = expire_mode # ACCESS_BASED (invalidate items that were not updated or accessed)
-        self.expire_duration_ms = 2 * 60 # If the item is older than this - it gets removed
+        # Main method that is used to populate the cache
         self.call_to_execute = call_to_execute
+
+        # If cache becomes larger than that - some results will be removed
+        # Elements will be dropped from cache according to this expire mode
+        self.max_allowed_size = max_allowed_size
+        self.size_expire_mode = size_expire_mode
+
+        # If cache has some elements that were not computed for a long time - we will drop them
+        # Leave at -1 to disable
+        self.expire_by_computed_duration_ms = expire_by_computed_duration_ms
+        self.expire_by_computed_duration_ns = self.expire_by_computed_duration_ms * 1000000
+        self.expire_by_computed_enabled = self.expire_by_computed_duration_ms > 0
+
+        # If cache has some elements that were not accessed for a long time - we will drop them
+        # Leave at -1 to disable
+        self.expire_by_access_duration_ms = expire_by_access_duration_ms
+        self.expire_by_access_duration_ns = self.expire_by_access_duration_ms * 1000000
+        self.expire_by_access_enabled = self.expire_by_access_duration_ms > 0
 
         # Map that stores the results {key -> result}
         self.results_map = {}
@@ -41,25 +61,67 @@ class Cache:
         self.access_counter_map_lock = threading.Lock()
 
 
-    def _assert_max_size(self):
+    def _assert_expire_max_size(self):
         while len(self.results_map) > self.max_allowed_size:
             with self.results_map_lock and self.last_computed_map_lock and self.last_accessed_map_lock and self.access_counter_map_lock:
-                key = self._find_key_to_remove()
+                key = self._find_key_to_remove_for_expire_max_size()
                 self.results_map.pop(key)
                 self.last_computed_map.pop(key)
                 self.last_accessed_map.pop(key)
                 self.access_counter_map.pop(key)
-                print('Cache._assert_max_size(): Dropped ' + str(key))
+                print('Cache._assert_expire_max_size(): Dropped ' + str(key))
 
-    def _find_key_to_remove(self) -> str:
-        if self.expire_mode == self.expire_mode_access_time_based:
+    def _assert_expire_by_computed_duration(self):
+        # If expire by computed is enabled
+        if self.expire_by_computed_enabled:
+            with self.last_computed_map_lock:
+                # Get next drop candidate
+                key = self._find_key_first_computed()
+
+                # Calculate how long ago was this key computed
+                last_computed_timestamp_ns = self.last_computed_map[key]
+                now_timestamp_ns = time.time_ns()
+                delta_ns = now_timestamp_ns - last_computed_timestamp_ns
+
+                # If longer than our expire duration - drop this key
+                if delta_ns > self.expire_by_computed_duration_ns:
+                    with self.results_map_lock and self.last_accessed_map_lock and self.access_counter_map_lock:
+                        self.results_map.pop(key)
+                        self.last_computed_map.pop(key)
+                        self.last_accessed_map.pop(key)
+                        self.access_counter_map.pop(key)
+                        print('Cache._assert_expire_by_computed_duration(): Dropped ' + str(key))
+
+    def _assert_expire_by_access_duration(self):
+        # If expire by access is enabled
+        if self.expire_by_access_enabled:
+            with self.last_accessed_map_lock:
+                # Get next drop candidate
+                key = self._find_key_first_accessed()
+
+                # Calculate how long ago was this key accessed
+                last_accessed_timestamp_ns = self.last_accessed_map[key]
+                now_timestamp_ns = time.time_ns()
+                delta_ns = now_timestamp_ns - last_accessed_timestamp_ns
+
+                # If longer than our expire duration - drop this key
+                if delta_ns > self.expire_by_access_duration_ns:
+                    with self.results_map_lock and self.last_computed_map_lock and self.access_counter_map_lock:
+                        self.results_map.pop(key)
+                        self.last_computed_map.pop(key)
+                        self.last_accessed_map.pop(key)
+                        self.access_counter_map.pop(key)
+                        print('Cache._assert_expire_by_access_duration(): Dropped ' + str(key))
+
+    def _find_key_to_remove_for_expire_max_size(self) -> str:
+        if self.size_expire_mode == self.expire_mode_accessed_time_based:
             return self._find_key_first_accessed()
-        elif self.expire_mode == self.expire_mode_update_time_based:
+        elif self.size_expire_mode == self.expire_mode_computed_time_based:
             return self._find_key_first_computed()
-        elif self.expire_mode == self.expire_mode_access_count_based:
+        elif self.size_expire_mode == self.expire_mode_access_count_based:
             return self._find_key_least_accessed()
         else:
-            raise RuntimeError('Expire mode ' + str(self.expire_mode) + ' is not implemented yet')
+            raise RuntimeError('Size expire mode ' + str(self.size_expire_mode) + ' is not implemented yet')
 
     def _find_key_first_accessed(self):
         return min(self.last_accessed_map.items(), key=operator.itemgetter(1))[0]
@@ -90,7 +152,9 @@ class Cache:
         self._update_in_access_counter_map(key)
 
         # Track size
-        self._assert_max_size()
+        self._assert_expire_max_size()
+        self._assert_expire_by_access_duration()
+        self._assert_expire_by_computed_duration()
 
         t2 = time.time()
         print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
