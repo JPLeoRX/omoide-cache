@@ -9,22 +9,18 @@ class ExpireMode:
     ACCESSED_TIME_BASED = 'ACCESSED_TIME_BASED'
     ACCESS_COUNT_BASED = 'ACCESS_COUNT_BASED'
 
+class RefreshMode:
+    NONE = 'NONE'
+    COUPLED = 'COUPLED'                                 # Cache results will be checked and re-computed after each get call in a separate thread
+    INDEPENDENT = 'INDEPENDENT'                         # Cache results will be periodically checked and re-computed in a separate thread
+
 class Cache:
     def __init__(self,
                  call_to_execute,
-                 max_allowed_size: int = 100, size_expire_mode: str = 'ACCESS_COUNT_BASED',
+                 max_allowed_size: int = 100, size_expire_mode: str = ExpireMode.ACCESS_COUNT_BASED,
                  expire_by_computed_duration_s: int = -1, expire_by_access_duration_s: int = -1,
-                 refresh_duration_s: int = -1, refresh_mode: str = 'COUPLED', refresh_period_s: int = -1
+                 refresh_duration_s: int = -1, refresh_mode: str = RefreshMode.COUPLED, refresh_period_s: int = -1
                  ):
-        # Constants
-        # self.expire_mode_none = 'NONE'
-        # self.expire_mode_computed_time_based = 'COMPUTED_TIME_BASED'
-        # self.expire_mode_accessed_time_based = 'ACCESSED_TIME_BASED'
-        # self.expire_mode_access_count_based = 'ACCESS_COUNT_BASED'
-        self.refresh_mode_none = 'NONE'
-        self.refresh_mode_independent = 'INDEPENDENT'
-        self.refresh_mode_coupled = 'COUPLED'
-
         # Main method that is used to populate the cache
         self.call_to_execute = call_to_execute
 
@@ -76,8 +72,89 @@ class Cache:
 
         # Launch periodic refresh
         if self.refresh_enabled:
-            if self.refresh_mode == self.refresh_mode_independent:
-                self._refresh_periodic()
+            if self.refresh_mode == RefreshMode.INDEPENDENT:
+                self._refresh_independent()
+
+    # Core methods
+    #-------------------------------------------------------------------------------------------------------------------
+    def _build_key(self, positional_arguments: List, keyword_arguments: Dict) -> str:
+        return 'Key{positional_arguments=' + str(positional_arguments) + '; keyword_arguments=' + str(keyword_arguments) + '}'
+
+    def _compute_result(self, positional_arguments: List, keyword_arguments: Dict):
+        return self.call_to_execute(*positional_arguments, **keyword_arguments)
+    #-------------------------------------------------------------------------------------------------------------------
+
+
+
+    # Map thread safe methods
+    #-------------------------------------------------------------------------------------------------------------------
+    def _update_in_result_map(self, key: str, result):
+        with self.results_map_lock:
+            self.results_map[key] = result
+
+    def _update_in_arguments_map(self, key: str, positional_arguments: List, keyword_arguments: Dict):
+        with self.arguments_map_lock:
+            self.arguments_map[key] = (positional_arguments, keyword_arguments)
+
+    def _update_in_last_computed_map(self, key):
+        with self.last_computed_map_lock:
+            self.last_computed_map[key] = time.time_ns()
+
+    def _update_in_last_accessed_map(self, key):
+        with self.last_accessed_map_lock:
+            self.last_accessed_map[key] = time.time_ns()
+
+    def _update_in_access_counter_map(self, key):
+        with self.access_counter_map_lock:
+            old_value = self.access_counter_map.get(key, 0)
+            new_value = old_value + 1
+            self.access_counter_map[key] = new_value
+    #-------------------------------------------------------------------------------------------------------------------
+
+
+
+    # Public access method, main thing exposed to the user
+    #-------------------------------------------------------------------------------------------------------------------
+    def get(self, positional_arguments: List, keyword_arguments: Dict):
+        t1 = time.time()
+
+        # Build key
+        key = self._build_key(positional_arguments, keyword_arguments)
+
+        # If the key is not currently stored
+        needs_to_be_computed = False
+        with self.results_map_lock:
+            if key not in self.results_map:
+                needs_to_be_computed = True
+        if needs_to_be_computed:
+            computed_result = self._compute_result(positional_arguments, keyword_arguments)
+            self._update_in_result_map(key, computed_result)
+            self._update_in_arguments_map(key, positional_arguments, keyword_arguments)
+            self._update_in_last_computed_map(key)
+
+        # Get key from the map
+        result = self.results_map[key]
+
+        # Update all map data
+        self._update_in_last_accessed_map(key)
+        self._update_in_access_counter_map(key)
+
+        # Track size
+        self._assert_expire_max_size()
+        self._assert_expire_by_access_duration()
+        self._assert_expire_by_computed_duration()
+
+        # Force refresh
+        if self.refresh_enabled:
+            if self.refresh_mode == RefreshMode.COUPLED:
+                self._refresh_coupled()
+
+        t2 = time.time()
+        print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
+        return result
+    #-------------------------------------------------------------------------------------------------------------------
+
+
 
     # Expire methods
     #-------------------------------------------------------------------------------------------------------------------
@@ -161,44 +238,10 @@ class Cache:
         return min(self.access_counter_map.items(), key=operator.itemgetter(1))[0]
     #-------------------------------------------------------------------------------------------------------------------
 
-    def get(self, positional_arguments: List, keyword_arguments: Dict):
-        t1 = time.time()
 
-        # Build key
-        key = self._build_key(positional_arguments, keyword_arguments)
 
-        # If the key is not currently stored
-        needs_to_be_computed = False
-        with self.results_map_lock:
-            if key not in self.results_map:
-                needs_to_be_computed = True
-        if needs_to_be_computed:
-            computed_result = self._compute_result(positional_arguments, keyword_arguments)
-            self._update_in_result_map(key, computed_result)
-            self._update_in_arguments_map(key, positional_arguments, keyword_arguments)
-            self._update_in_last_computed_map(key)
-
-        # Get key from the map
-        result = self.results_map[key]
-
-        # Update all map data
-        self._update_in_last_accessed_map(key)
-        self._update_in_access_counter_map(key)
-
-        # Track size
-        self._assert_expire_max_size()
-        self._assert_expire_by_access_duration()
-        self._assert_expire_by_computed_duration()
-
-        # Force refresh
-        if self.refresh_enabled:
-            if self.refresh_mode == self.refresh_mode_coupled:
-                self._refresh_async()
-
-        t2 = time.time()
-        print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
-        return result
-
+    # Refresh logic
+    #-------------------------------------------------------------------------------------------------------------------
     def _refresh(self):
         t1 = time.time()
 
@@ -234,38 +277,33 @@ class Cache:
         t2 = time.time()
         print('Cache._refresh(): Complete refresh took ' + str(round(t2 - t1, 2)) + ' seconds')
 
-    def _refresh_async(self):
-        threading.Thread(target=self._refresh, args=[]).start()
+    def _refresh_coupled(self):
+        print('Cache._refresh_coupled(): Started')
 
-    def _refresh_periodic(self):
-        self._refresh()
-        threading.Timer(self.refresh_period_s, self._refresh_periodic).start()
+        if self.refresh_enabled:
+            if self.refresh_mode == RefreshMode.COUPLED:
+                threading.Thread(target=self._refresh, args=[]).start()
+            else:
+                raise RuntimeError('Refresh coupled was called, but refresh mode is ' + str(self.refresh_mode))
+        else:
+            raise RuntimeError('Refresh coupled was called, but refresh is not enabled!')
 
-    def _build_key(self, positional_arguments: List, keyword_arguments: Dict) -> str:
-        return 'Key{positional_arguments=' + str(positional_arguments) + '; keyword_arguments=' + str(keyword_arguments) + '}'
+        print('Cache._refresh_coupled(): Ended')
 
-    def _compute_result(self, positional_arguments: List, keyword_arguments: Dict):
-        return self.call_to_execute(*positional_arguments, **keyword_arguments)
+    def _refresh_independent(self):
+        print('Cache._refresh_independent(): Started')
 
-    def _update_in_result_map(self, key: str, result):
-        with self.results_map_lock:
-            self.results_map[key] = result
+        if self.refresh_enabled:
+            if self.refresh_mode == RefreshMode.INDEPENDENT:
+                if self.refresh_period_s >= 1:
+                    self._refresh()
+                    threading.Timer(self.refresh_period_s, self._refresh_independent).start()
+                else:
+                    raise RuntimeError('Refresh independent was called, but refresh period is ' + str(self.refresh_period_s))
+            else:
+                raise RuntimeError('Refresh independent was called, but refresh mode is ' + str(self.refresh_mode))
+        else:
+            raise RuntimeError('Refresh independent was called, but refresh is not enabled!')
 
-    def _update_in_arguments_map(self, key: str, positional_arguments: List, keyword_arguments: Dict):
-        with self.arguments_map_lock:
-            self.arguments_map[key] = (positional_arguments, keyword_arguments)
-
-    def _update_in_last_computed_map(self, key):
-        with self.last_computed_map_lock:
-            self.last_computed_map[key] = time.time_ns()
-
-    def _update_in_last_accessed_map(self, key):
-        with self.last_accessed_map_lock:
-            self.last_accessed_map[key] = time.time_ns()
-
-    def _update_in_access_counter_map(self, key):
-        with self.access_counter_map_lock:
-            old_value = self.access_counter_map.get(key, 0)
-            new_value = old_value + 1
-            self.access_counter_map[key] = new_value
-
+        print('Cache._refresh_independent(): Ended')
+    #-------------------------------------------------------------------------------------------------------------------
