@@ -3,23 +3,27 @@ import threading
 import operator
 from typing import List, Dict
 
+
 class ExpireMode:
     NONE = 'NONE'
     COMPUTED_TIME_BASED = 'COMPUTED_TIME_BASED'
     ACCESSED_TIME_BASED = 'ACCESSED_TIME_BASED'
     ACCESS_COUNT_BASED = 'ACCESS_COUNT_BASED'
 
+
 class RefreshMode:
     NONE = 'NONE'
     COUPLED = 'COUPLED'                                 # Cache results will be checked and re-computed after each get call in a separate thread
     INDEPENDENT = 'INDEPENDENT'                         # Cache results will be periodically checked and re-computed in a separate thread
+
 
 class Cache:
     def __init__(self,
                  call_to_execute,
                  max_allowed_size: int = 100, size_expire_mode: str = ExpireMode.ACCESS_COUNT_BASED,
                  expire_by_computed_duration_s: int = -1, expire_by_access_duration_s: int = -1,
-                 refresh_duration_s: int = -1, refresh_mode: str = RefreshMode.COUPLED, refresh_period_s: int = -1
+                 refresh_duration_s: int = -1, refresh_mode: str = RefreshMode.COUPLED, refresh_period_s: int = -1,
+                 debug: bool = False
                  ):
         # Main method that is used to populate the cache
         self.call_to_execute = call_to_execute
@@ -75,6 +79,9 @@ class Cache:
             if self.refresh_mode == RefreshMode.INDEPENDENT:
                 self._refresh_independent()
 
+        # Debug flag
+        self.debug = debug
+
     # Core methods
     #-------------------------------------------------------------------------------------------------------------------
     def _build_key(self, positional_arguments: List, keyword_arguments: Dict) -> str:
@@ -115,7 +122,7 @@ class Cache:
 
     # Public access method, main thing exposed to the user
     #-------------------------------------------------------------------------------------------------------------------
-    def get(self, positional_arguments: List, keyword_arguments: Dict):
+    def get(self, positional_arguments: List, keyword_arguments: Dict = {}):
         t1 = time.time()
 
         # Build key
@@ -150,7 +157,8 @@ class Cache:
                 self._refresh_coupled()
 
         t2 = time.time()
-        print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
+        if self.debug:
+            print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
         return result
     #-------------------------------------------------------------------------------------------------------------------
 
@@ -159,7 +167,7 @@ class Cache:
     # Expire methods
     #-------------------------------------------------------------------------------------------------------------------
     def _assert_expire_max_size(self):
-        while len(self.results_map) > self.max_allowed_size:
+        while len(self.results_map) >= self.max_allowed_size:
             with self.results_map_lock and self.arguments_map_lock and self.last_computed_map_lock and self.last_accessed_map_lock and self.access_counter_map_lock:
                 key = self._find_key_to_remove_for_expire_max_size()
                 self.results_map.pop(key)
@@ -167,7 +175,8 @@ class Cache:
                 self.last_computed_map.pop(key)
                 self.last_accessed_map.pop(key)
                 self.access_counter_map.pop(key)
-                print('Cache._assert_expire_max_size(): Dropped ' + str(key))
+                if self.debug:
+                    print('Cache._assert_expire_max_size(): Dropped ' + str(key))
 
     def _assert_expire_by_computed_duration(self):
         # If expire by computed is enabled
@@ -189,7 +198,8 @@ class Cache:
                         self.last_computed_map.pop(key)
                         self.last_accessed_map.pop(key)
                         self.access_counter_map.pop(key)
-                        print('Cache._assert_expire_by_computed_duration(): Dropped ' + str(key))
+                        if self.debug:
+                            print('Cache._assert_expire_by_computed_duration(): Dropped ' + str(key))
 
     def _assert_expire_by_access_duration(self):
         # If expire by access is enabled
@@ -211,7 +221,8 @@ class Cache:
                         self.last_computed_map.pop(key)
                         self.last_accessed_map.pop(key)
                         self.access_counter_map.pop(key)
-                        print('Cache._assert_expire_by_access_duration(): Dropped ' + str(key))
+                        if self.debug:
+                            print('Cache._assert_expire_by_access_duration(): Dropped ' + str(key))
     #-------------------------------------------------------------------------------------------------------------------
 
 
@@ -268,17 +279,20 @@ class Cache:
                     self._update_in_result_map(key, computed_result)
                     self._update_in_last_computed_map(key)
                     t4 = time.time()
-                    print('Cache._refresh(): Update of result for positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t4 - t3, 2)) + ' seconds')
+                    if self.debug:
+                        print('Cache._refresh(): Update of result for positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t4 - t3, 2)) + ' seconds')
 
         # If not - raise error
         else:
             raise RuntimeError('Refresh was called, but refresh is not enabled!')
 
         t2 = time.time()
-        print('Cache._refresh(): Complete refresh took ' + str(round(t2 - t1, 2)) + ' seconds')
+        if self.debug:
+            print('Cache._refresh(): Complete refresh took ' + str(round(t2 - t1, 2)) + ' seconds')
 
     def _refresh_coupled(self):
-        print('Cache._refresh_coupled(): Started')
+        if self.debug:
+            print('Cache._refresh_coupled(): Started')
 
         if self.refresh_enabled:
             if self.refresh_mode == RefreshMode.COUPLED:
@@ -288,10 +302,12 @@ class Cache:
         else:
             raise RuntimeError('Refresh coupled was called, but refresh is not enabled!')
 
-        print('Cache._refresh_coupled(): Ended')
+        if self.debug:
+            print('Cache._refresh_coupled(): Ended')
 
     def _refresh_independent(self):
-        print('Cache._refresh_independent(): Started')
+        if self.debug:
+            print('Cache._refresh_independent(): Started')
 
         if self.refresh_enabled:
             if self.refresh_mode == RefreshMode.INDEPENDENT:
@@ -305,5 +321,6 @@ class Cache:
         else:
             raise RuntimeError('Refresh independent was called, but refresh is not enabled!')
 
-        print('Cache._refresh_independent(): Ended')
+        if self.debug:
+            print('Cache._refresh_independent(): Ended')
     #-------------------------------------------------------------------------------------------------------------------
