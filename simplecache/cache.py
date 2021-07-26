@@ -147,7 +147,7 @@ class Cache:
         self._update_in_access_counter_map(key)
 
         # Track size
-        self._assert_expire_max_size()
+        self._assert_expire_max_size(key)
         self._assert_expire_by_access_duration()
         self._assert_expire_by_computed_duration()
 
@@ -166,10 +166,10 @@ class Cache:
 
     # Expire methods
     #-------------------------------------------------------------------------------------------------------------------
-    def _assert_expire_max_size(self):
-        while len(self.results_map) >= self.max_allowed_size:
+    def _assert_expire_max_size(self, last_accessed_key: str):
+        while len(self.results_map) > self.max_allowed_size:
             with self.results_map_lock and self.arguments_map_lock and self.last_computed_map_lock and self.last_accessed_map_lock and self.access_counter_map_lock:
-                key = self._find_key_to_remove_for_expire_max_size()
+                key = self._find_key_to_remove_for_expire_max_size(last_accessed_key)
                 self.results_map.pop(key)
                 self.arguments_map.pop(key)
                 self.last_computed_map.pop(key)
@@ -229,13 +229,13 @@ class Cache:
 
     # Methods that find keys for expire policies
     #-------------------------------------------------------------------------------------------------------------------
-    def _find_key_to_remove_for_expire_max_size(self) -> str:
+    def _find_key_to_remove_for_expire_max_size(self, last_accessed_key: str) -> str:
         if self.size_expire_mode == ExpireMode.ACCESSED_TIME_BASED:
             return self._find_key_first_accessed()
         elif self.size_expire_mode == ExpireMode.COMPUTED_TIME_BASED:
             return self._find_key_first_computed()
         elif self.size_expire_mode == ExpireMode.ACCESS_COUNT_BASED:
-            return self._find_key_least_accessed()
+            return self._find_key_least_accessed(last_accessed_key)
         else:
             raise RuntimeError('Size expire mode ' + str(self.size_expire_mode) + ' is not implemented yet')
 
@@ -245,8 +245,9 @@ class Cache:
     def _find_key_first_computed(self):
         return min(self.last_computed_map.items(), key=operator.itemgetter(1))[0]
 
-    def _find_key_least_accessed(self):
-        return min(self.access_counter_map.items(), key=operator.itemgetter(1))[0]
+    def _find_key_least_accessed(self, last_accessed_key: str):
+        key_value_pairs = [p for p in self.access_counter_map.items() if p[0] != last_accessed_key]
+        return min(key_value_pairs, key=operator.itemgetter(1))[0]
     #-------------------------------------------------------------------------------------------------------------------
 
 
