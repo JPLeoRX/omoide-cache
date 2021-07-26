@@ -54,6 +54,12 @@ class Cache:
         self.refresh_mode = refresh_mode
         self.refresh_period_s = refresh_period_s
 
+        # Debug flag
+        self.debug = debug
+
+        # Terminate flag
+        self.terminated = False
+
         # Map that stores the results {key -> result}
         self.results_map = {}
         self.results_map_lock = threading.Lock()
@@ -78,9 +84,6 @@ class Cache:
         if self.refresh_enabled:
             if self.refresh_mode == RefreshMode.INDEPENDENT:
                 self._refresh_independent()
-
-        # Debug flag
-        self.debug = debug
 
     # Core methods
     #-------------------------------------------------------------------------------------------------------------------
@@ -160,6 +163,10 @@ class Cache:
         if self.debug:
             print('Cache.get() With positional_arguments=' + str(positional_arguments) + ', keyword_arguments=' + str(keyword_arguments) + ' took ' + str(round(t2 - t1, 2)) + ' seconds')
         return result
+
+    # Use this only if refresh independent is selected
+    def terminate(self):
+        self.terminated = True
     #-------------------------------------------------------------------------------------------------------------------
 
 
@@ -307,6 +314,10 @@ class Cache:
             print('Cache._refresh_coupled(): Ended')
 
     def _refresh_independent(self):
+        if self.terminated:
+            print('Cache._refresh_independent(): Won\'t run because cache refreshes were terminated')
+            return
+
         if self.debug:
             print('Cache._refresh_independent(): Started')
 
