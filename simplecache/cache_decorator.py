@@ -20,7 +20,11 @@ def cache_decorator(max_allowed_size: int = 100, size_expire_mode: str = ExpireM
     def cache_decorator_inner(function):
         def wrapper_function(*args, **kwargs):
             # Find name of current method & object to which it is bound
-            call_arguments = inspect.getcallargs(function, args, kwargs)
+            call_arguments = None
+            if len(args) == 1:
+                call_arguments = inspect.getcallargs(function, args)
+            else:
+                call_arguments = inspect.getcallargs(function, args, kwargs)
             function_name = function.__name__
             function_object = call_arguments['self'][0]
 
