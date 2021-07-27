@@ -167,6 +167,10 @@ class Cache:
     # Use this only if refresh independent is selected
     def terminate(self):
         self.terminated = True
+
+    def is_cached(self, positional_arguments: List, keyword_arguments: Dict = {}) -> bool:
+        key = self._build_key(positional_arguments, keyword_arguments)
+        return key in self.results_map
     #-------------------------------------------------------------------------------------------------------------------
 
 
