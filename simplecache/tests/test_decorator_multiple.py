@@ -1,17 +1,17 @@
 import time
-from simplecache.cache_decorator import cache_decorator
+from simplecache.cache_decorator import simplecache
 
 
 class ExampleService:
     def __init__(self):
         self.power = 3
 
-    @cache_decorator()
+    @simplecache()
     def costly_method_1(self, number: int) -> float:
         time.sleep(0.2)
         return number * number
 
-    @cache_decorator()
+    @simplecache()
     def costly_method_2(self, number: int) -> float:
         time.sleep(0.2)
         return number ** self.power

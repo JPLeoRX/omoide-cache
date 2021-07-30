@@ -3,12 +3,12 @@ import time
 from typing import List
 
 from simplecache.examples.example_active_users.user import User
-from simplecache.cache_decorator import cache_decorator
+from simplecache.cache_decorator import simplecache
 from simplecache.cache import RefreshMode
 
 
 class UserService:
-    @cache_decorator(refresh_duration_s=10, refresh_period_s=3, refresh_mode=RefreshMode.INDEPENDENT)
+    @simplecache(refresh_duration_s=10, refresh_period_s=3, refresh_mode=RefreshMode.INDEPENDENT)
     def get_active_users(self) -> List[User]:
         print('UserService.get_active_users(): Generating list...')
         time.sleep(1)

@@ -1,8 +1,8 @@
-from simplecache.cache_decorator import cache_decorator
+from simplecache.cache_decorator import simplecache
 
 
 class CalculationService:
-    @cache_decorator()
+    @simplecache()
     def weird_method(self, x: float, y: float, z: float = 0) -> float:
         return x * y + z
 

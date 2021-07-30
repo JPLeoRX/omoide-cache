@@ -3,11 +3,11 @@ import spacy
 from spacy.tokens import Doc, Token
 nlp = spacy.load('en_core_web_lg')
 
-from simplecache.cache_decorator import cache_decorator
+from simplecache.cache_decorator import simplecache
 
 class SpacyService:
     # Build spacy tokens from string
-    @cache_decorator()
+    @simplecache()
     def tokenize(self, text: str) -> Doc:
         t1 = time.time()
         doc = nlp(text)
@@ -16,7 +16,7 @@ class SpacyService:
         return doc
 
     # Find semantic similarity between two strings
-    @cache_decorator()
+    @simplecache()
     def calculate_semantic_similarity(self, text1: str, text2: str) -> float:
         t1 = time.time()
         tokens1 = self.tokenize(text1)
