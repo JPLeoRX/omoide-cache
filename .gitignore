@@ -1,7 +1,7 @@
 # Pip build files
 build
 dist
-simplestr.egg-info
+simplecache.egg-info
 
 **/target/
 target/*
