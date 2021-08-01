@@ -2,6 +2,7 @@
 build
 dist
 simplecache.egg-info
+omoide_cache.egg-info
 
 **/target/
 target/*
