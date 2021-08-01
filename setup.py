@@ -8,8 +8,9 @@ with open("README.md", "r") as readme_file:
 setup_args = dict(
     name='simplecache',
     version='0.1',
-    description="Simple cache",
+    description="Robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.",
     keywords=['cache', 'decorator', 'annotation', 'in-memory'],
+    license='Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License',
     long_description=readme_text,
     long_description_content_type="text/markdown",
     packages=find_packages(),
