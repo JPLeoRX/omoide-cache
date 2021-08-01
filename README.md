@@ -4,99 +4,115 @@ Caching doesn't need to be hard anymore. With just a few lines of code **simplec
 # Description
 This is a robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.
 
-It was designed to be a cache around a single method, storing its return value and using method call arguments as cache key.
+It is designed to be a method level cache, wrapping around a single class method, using method call arguments as cache key and storing its return value. 
 
-Very user-friendly, super easy to use with a simple annotation, no need to add complicated integration logic into your code. Simply add `@simplecache()` on top of any method in your services! It will auto-generate a cache for your method with default settings. You can further adjust these settings through annotation parameters. It mirrors normal cache initialization completely.
+Customizable to suit your specific use-case, provides various expiry and refresh options.
+
+Very user-friendly, super easy to integrate with a simple decorator (i.e. annotation, for those coming from Java), no need to add complicated logic into your code, just use `@simplecache()` on top of any method in your services. It will auto-generate a cache for your method with default settings. You can further adjust these settings through decorator parameters.
 
 ### When to use? This cache perfectly suits following conditions:
-- You got a heavy call to the database, that needs to be.
-- You have CPU intensive computation logic, that takes a few seconds to complete, but can be frequently called with same parameters?
+- You got a heavy call to the data source, where the data is read way more often than it is updated.
+- You have CPU intensive computation logic, that takes a few seconds to complete, but can is frequently called with same input parameters.
 
 ### When not to use?
-- Do not use on methods that are not expected to be frequently called with the same arguments - image processing / OCR / ML models with image inputs
-- Do not use on methods that return new values each time they are called, even with the same arguments.
-- Do not use when you expect argument objects or returned objects to take-up a lot of memory. Cache will quickly eat up your ram if you don't setup expiry modes properly. 
+- On methods that are not expected to be frequently called with the same arguments (e.g. image processing / OCR / ML models with image inputs)
+- On methods that return new values each time they are called, even with the same arguments.
+- When you expect argument objects or returned objects to take-up a lot of memory. Cache will quickly eat up your ram if you don't setup expiry modes properly.
+- Functions that are declared outside of class is a no go.  
 
-
-This package provides only two annotations:
-- `@gen_str` to generate `__str__(self)` method
-- `@gen_repr` to generate `__repr__(self)` method
-- `@gen_eq` to generate `__eq__(self, other)` method 
-- `@gen_str_repr` to generate both `__str__(self)` and `__repr__(self)` methods
-- `@gen_str_repr_eq` to generate both `__str__(self)`, `__repr__(self)` and `__eq__(self, other)` methods
+Fair warning - this project is in the earliest stage of its lifecycle, there will be a lot of improvement and bug fixes in the future. All suggestions and bug reports are highly welcome!
 
 # Installation
  
 ## Normal installation
-
 ```bash
-pip install simplestr
+pip install simplecache
 ```
 
 ## Development installation
-
 ```bash
-git clone https://github.com/jpleorx/simplestr.git
-cd simplestr
+git clone https://github.com/jpleorx/simplecache.git
+cd simplecache
 pip install --editable .
 ```
 
-# Example A (with separate annotations)
+# Examples
+#### 1 - Basic usage example
 ```python
-from simplestr import gen_str, gen_repr, gen_eq
+import time
+from simplecache import simplecache
 
-@gen_str
-@gen_repr
-@gen_eq
-class Rect:
-    def __init__(self, x: int, y: int, w: int, h: int):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
 
-rect1 = Rect(1, 2, 3, 4)
-rect2 = Rect(10, 20, 30, 40)
-print(rect1)
-print(rect2)
-print([rect1, rect2])
-print(rect1 == rect2)
-print(rect1 == Rect(1, 2, 3, 4))
+# A class where cache was added to a simulated long running method
+class ExampleService:
+    @simplecache()
+    def time_consuming_method(self, x: int) -> int:
+        time.sleep(2.0)
+        return x * x
+
+
+service = ExampleService()
+
+# The first call will execute real logic and store the result in cache
+service.time_consuming_method(1)
+
+# The second call will get results from cache
+service.time_consuming_method(1)
 ```
 
-```
-Rect{x=1, y=2, w=3, h=4}
-Rect{x=10, y=20, w=30, h=40}
-[Rect{x=1, y=2, w=3, h=4}, Rect{x=10, y=20, w=30, h=40}]
-False
-True
-```
-
-# Example B (with joined annotation)
+#### 2 - Example with size limit
+Here we add a cache that will drop an item least frequently accessed when the cache becomes too large.
 ```python
-from simplestr import gen_str_repr_eq
+import time
+from simplecache import simplecache, ExpireMode
 
-@gen_str_repr_eq
-class Rect:
-    def __init__(self, x: int, y: int, w: int, h: int):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
 
-rect1 = Rect(1, 2, 3, 4)
-rect2 = Rect(10, 20, 30, 40)
-print(rect1)
-print(rect2)
-print([rect1, rect2])
-print(rect1 == rect2)
-print(rect1 == Rect(1, 2, 3, 4))
+class ExampleService:
+    @simplecache(max_allowed_size=10, size_expire_mode=ExpireMode.ACCESS_COUNT_BASED)
+    def time_consuming_method(self, x: int) -> int:
+        time.sleep(2.0)
+        return x * x
 ```
 
+#### 3 - Example with timed expiry
+Here the cache will automatically remove items that were last accessed more than 2 minutes ago.
+```python
+import time
+from simplecache import simplecache
+
+
+class ExampleService:
+    @simplecache(expire_by_access_duration_s=120)
+    def time_consuming_method(self, x: int) -> int:
+        time.sleep(2.0)
+        return x * x
 ```
-Rect{x=1, y=2, w=3, h=4}
-Rect{x=10, y=20, w=30, h=40}
-[Rect{x=1, y=2, w=3, h=4}, Rect{x=10, y=20, w=30, h=40}]
-False
-True
+Alternatively we can remove items that were computed more than 2 minutes ago.
+```python
+import time
+from simplecache import simplecache
+
+
+class ExampleService:
+    @simplecache(expire_by_computed_duration_s=120)
+    def time_consuming_method(self, x: int) -> int:
+        time.sleep(2.0)
+        return x * x
 ```
+
+#### 4 - Example with async refresh
+Here the cache will asynchronously refresh items that were computed more than 2 minutes ago. Attempt to refresh will be performed every 10 seconds.
+```python
+import time
+from simplecache import simplecache, RefreshMode
+
+
+class ExampleService:
+    @simplecache(refresh_duration_s=120, refresh_period_s=10, refresh_mode=RefreshMode.INDEPENDENT)
+    def time_consuming_method(self, x: int) -> int:
+        time.sleep(2.0)
+        return x * x
+```
+
+# Known bugs
+* You need to use the decorator with parentheses all the time, even when you don't specify any arguments, so use `@simplecache()`, but not `@simplecache`. I honestly have no fucking idea why there's this weird behaviour in decorators, will do my best to fix it in future updates.
