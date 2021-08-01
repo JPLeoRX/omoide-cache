@@ -1,5 +1,5 @@
-# simplecache
-Caching doesn't need to be hard anymore. With just a few lines of code **simplecache** will instantly bring your Python services to the next level!
+# Omoide Cache
+Caching doesn't need to be hard anymore. With just a few lines of code **Omoide Cache** will instantly bring your Python services to the next level!
 
 # Description
 This is a robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.
@@ -8,7 +8,7 @@ It is designed to be a method level cache, wrapping around a single class method
 
 Customizable to suit your specific use-case, provides various expiry and refresh options.
 
-Very user-friendly, super easy to integrate with a simple decorator (i.e. annotation, for those coming from Java), no need to add complicated logic into your code, just use `@simplecache()` on top of any method in your services. It will auto-generate a cache for your method with default settings. You can further adjust these settings through decorator parameters.
+Very user-friendly, super easy to integrate with a simple decorator (i.e. annotation, for those coming from Java), no need to add complicated logic into your code, just use `@omoide_cache()` on top of any method in your services. It will auto-generate a cache for your method with default settings. You can further adjust these settings through decorator parameters.
 
 ### When to use?
 - You got a heavy call to the data source, where the data is read way more often than it is updated.
@@ -26,13 +26,13 @@ Fair warning - this project is in the earliest stage of its lifecycle, there wil
  
 ## Normal installation
 ```bash
-pip install simplecache
+pip install omoide-cache
 ```
 
 ## Development installation
 ```bash
-git clone https://github.com/jpleorx/simplecache.git
-cd simplecache
+git clone https://github.com/jpleorx/omoide-cache.git
+cd omoide-cache
 pip install --editable .
 ```
 
@@ -115,7 +115,7 @@ class ExampleService:
 ```
 
 # Known bugs
-* You need to use the decorator with parentheses all the time, even when you don't specify any arguments, so use `@simplecache()`, but not `@simplecache`. I honestly have no fucking idea why there's this weird behaviour in decorators, will do my best to fix it in future updates.
+* You need to use the decorator with parentheses all the time, even when you don't specify any arguments, so use `@omoide_cache()`, but not `@omoide_cache`. I honestly have no fucking idea why there's this weird behaviour in decorators, will do my best to fix it in future updates.
 
 # Links
 In case you’d like to check my other work or contact me:
