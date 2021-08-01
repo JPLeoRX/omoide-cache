@@ -6,8 +6,8 @@ with open("README.md", "r") as readme_file:
 
 
 setup_args = dict(
-    name='simplecache',
-    version='0.1',
+    name='omoide-cache',
+    version='0.1.0',
     description="Robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.",
     keywords=['cache', 'decorator', 'annotation', 'in-memory'],
     license='Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License',
@@ -16,8 +16,8 @@ setup_args = dict(
     packages=find_packages(),
     author="Leo Ertuna",
     author_email="leo.ertuna@gmail.com",
-    url="https://github.com/jpleorx/simplecache",
-    download_url='https://pypi.org/project/simplecache/'
+    url="https://github.com/jpleorx/omoide-cache",
+    download_url='https://pypi.org/project/omoide-cache/'
 )
 
 
