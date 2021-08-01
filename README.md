@@ -116,3 +116,12 @@ class ExampleService:
 
 # Known bugs
 * You need to use the decorator with parentheses all the time, even when you don't specify any arguments, so use `@simplecache()`, but not `@simplecache`. I honestly have no fucking idea why there's this weird behaviour in decorators, will do my best to fix it in future updates.
+
+# Links
+In case you’d like to check my other work or contact me:
+* [Personal website](https://tekleo.net/)
+* [GitHub](https://github.com/jpleorx)
+* [PyPI](https://pypi.org/user/JPLeoRX/)
+* [DockerHub](https://hub.docker.com/u/jpleorx)
+* [Articles on Medium](https://medium.com/@leo.ertuna)
+* [LinkedIn (feel free to connect)](https://www.linkedin.com/in/leo-ertuna-14b539187/)
