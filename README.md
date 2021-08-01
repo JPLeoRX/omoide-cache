@@ -40,12 +40,12 @@ pip install --editable .
 #### 1 - Basic usage example
 ```python
 import time
-from simplecache import simplecache
+from omoide_cache import omoide_cache
 
 
 # A class where cache was added to a simulated long running method
 class ExampleService:
-    @simplecache()
+    @omoide_cache()
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x
@@ -64,11 +64,11 @@ service.time_consuming_method(1)
 Here we add a cache that will drop an item least frequently accessed when the cache becomes too large.
 ```python
 import time
-from simplecache import simplecache, ExpireMode
+from omoide_cache import omoide_cache, ExpireMode
 
 
 class ExampleService:
-    @simplecache(max_allowed_size=10, size_expire_mode=ExpireMode.ACCESS_COUNT_BASED)
+    @omoide_cache(max_allowed_size=10, size_expire_mode=ExpireMode.ACCESS_COUNT_BASED)
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x
@@ -78,11 +78,11 @@ class ExampleService:
 Here the cache will automatically remove items that were last accessed more than 2 minutes ago.
 ```python
 import time
-from simplecache import simplecache
+from omoide_cache import omoide_cache
 
 
 class ExampleService:
-    @simplecache(expire_by_access_duration_s=120)
+    @omoide_cache(expire_by_access_duration_s=120)
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x
@@ -90,11 +90,11 @@ class ExampleService:
 Alternatively we can remove items that were computed more than 2 minutes ago.
 ```python
 import time
-from simplecache import simplecache
+from omoide_cache import omoide_cache
 
 
 class ExampleService:
-    @simplecache(expire_by_computed_duration_s=120)
+    @omoide_cache(expire_by_computed_duration_s=120)
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x
@@ -104,11 +104,11 @@ class ExampleService:
 Here the cache will asynchronously refresh items that were computed more than 2 minutes ago. Attempt to refresh will be performed every 10 seconds.
 ```python
 import time
-from simplecache import simplecache, RefreshMode
+from omoide_cache import omoide_cache, RefreshMode
 
 
 class ExampleService:
-    @simplecache(refresh_duration_s=120, refresh_period_s=10, refresh_mode=RefreshMode.INDEPENDENT)
+    @omoide_cache(refresh_duration_s=120, refresh_period_s=10, refresh_mode=RefreshMode.INDEPENDENT)
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x

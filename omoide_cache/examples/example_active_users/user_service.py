@@ -3,12 +3,12 @@ import time
 from typing import List
 
 from omoide_cache.examples.example_active_users.user import User
-from omoide_cache.cache_decorator import simplecache
+from omoide_cache.cache_decorator import omoide_cache
 from omoide_cache.cache import RefreshMode
 
 
 class UserService:
-    @simplecache(refresh_duration_s=10, refresh_period_s=3, refresh_mode=RefreshMode.INDEPENDENT)
+    @omoide_cache(refresh_duration_s=10, refresh_period_s=3, refresh_mode=RefreshMode.INDEPENDENT)
     def get_active_users(self) -> List[User]:
         print('UserService.get_active_users(): Generating list...')
         time.sleep(1)

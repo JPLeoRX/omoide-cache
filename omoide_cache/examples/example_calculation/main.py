@@ -1,8 +1,8 @@
-from omoide_cache.cache_decorator import simplecache
+from omoide_cache.cache_decorator import omoide_cache
 
 
 class CalculationService:
-    @simplecache()
+    @omoide_cache()
     def weird_method(self, x: float, y: float, z: float = 0) -> float:
         return x * y + z
 

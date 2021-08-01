@@ -13,10 +13,10 @@ from omoide_cache.cache import ExpireMode, RefreshMode, Cache
 
 # TODO, for some weird reason this works only with "@cache_decorator(...)" call, while with no arguments "@cache_decorator" fails
 #  Needs more time and investigation why that happens. If you want to use it without arguments just add "@cache_decorator()", keep empty parantheses
-def simplecache(max_allowed_size: int = 100, size_expire_mode: str = ExpireMode.ACCESS_COUNT_BASED,
-                    expire_by_computed_duration_s: int = -1, expire_by_access_duration_s: int = -1,
-                    refresh_duration_s: int = -1, refresh_mode: str = RefreshMode.COUPLED, refresh_period_s: int = -1,
-                    debug: bool = False):
+def omoide_cache(max_allowed_size: int = 100, size_expire_mode: str = ExpireMode.ACCESS_COUNT_BASED,
+                 expire_by_computed_duration_s: int = -1, expire_by_access_duration_s: int = -1,
+                 refresh_duration_s: int = -1, refresh_mode: str = RefreshMode.COUPLED, refresh_period_s: int = -1,
+                 debug: bool = False):
     def cache_decorator_inner(function):
         def wrapper_function(*args, **kwargs):
             # Find name of current method & object to which it is bound

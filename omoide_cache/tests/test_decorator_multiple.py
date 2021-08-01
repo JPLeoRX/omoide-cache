@@ -1,17 +1,17 @@
 import time
-from omoide_cache.cache_decorator import simplecache
+from omoide_cache.cache_decorator import omoide_cache
 
 
 class ExampleService:
     def __init__(self):
         self.power = 3
 
-    @simplecache()
+    @omoide_cache()
     def costly_method_1(self, number: int) -> float:
         time.sleep(0.2)
         return number * number
 
-    @simplecache()
+    @omoide_cache()
     def costly_method_2(self, number: int) -> float:
         time.sleep(0.2)
         return number ** self.power

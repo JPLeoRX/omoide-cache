@@ -1,10 +1,10 @@
 import time
-from omoide_cache import simplecache
+from omoide_cache import omoide_cache
 
 
 # A class where cache was added to a simulated long running method
 class ExampleService:
-    @simplecache()
+    @omoide_cache()
     def time_consuming_method(self, x: int) -> int:
         time.sleep(2.0)
         return x * x
