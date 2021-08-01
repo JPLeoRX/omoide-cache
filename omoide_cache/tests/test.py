@@ -1,7 +1,7 @@
 import time
 import functools
 import inspect
-from simplecache.cache import Cache
+from omoide_cache.cache import Cache
 import threading
 import operator
 from typing import List, Dict

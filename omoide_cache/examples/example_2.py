@@ -1,5 +1,5 @@
 import time
-from simplecache import simplecache, ExpireMode
+from omoide_cache import simplecache, ExpireMode
 
 
 class ExampleService:

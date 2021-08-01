@@ -1,5 +1,5 @@
 import time
-from simplecache.examples.example_active_users.user_service import UserService
+from omoide_cache.examples.example_active_users.user_service import UserService
 
 service = UserService()
 

@@ -1,6 +1,6 @@
 import time
 
-from simplecache.cache_decorator import simplecache
+from omoide_cache.cache_decorator import simplecache
 
 class ExampleService:
     def __init__(self):

@@ -1,5 +1,5 @@
 import time
-from simplecache import simplecache, RefreshMode
+from omoide_cache import simplecache, RefreshMode
 
 
 class ExampleService:

@@ -3,7 +3,7 @@ import spacy
 from spacy.tokens import Doc, Token
 nlp = spacy.load('en_core_web_lg')
 
-from simplecache.cache_decorator import simplecache
+from omoide_cache.cache_decorator import simplecache
 
 class SpacyService:
     # Build spacy tokens from string

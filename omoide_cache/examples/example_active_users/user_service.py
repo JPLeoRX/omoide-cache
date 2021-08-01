@@ -2,9 +2,9 @@ import random
 import time
 from typing import List
 
-from simplecache.examples.example_active_users.user import User
-from simplecache.cache_decorator import simplecache
-from simplecache.cache import RefreshMode
+from omoide_cache.examples.example_active_users.user import User
+from omoide_cache.cache_decorator import simplecache
+from omoide_cache.cache import RefreshMode
 
 
 class UserService:

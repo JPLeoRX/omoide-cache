@@ -1,5 +1,5 @@
 import time
-from simplecache import simplecache
+from omoide_cache import simplecache
 
 
 # A class where cache was added to a simulated long running method

@@ -1,5 +1,5 @@
 import time
-from simplecache.cache import Cache, RefreshMode
+from omoide_cache.cache import Cache, RefreshMode
 
 number_of_calls = {}
 def call(x: float) -> float:

@@ -1,5 +1,5 @@
 import time
-from simplecache.cache import Cache
+from omoide_cache.cache import Cache
 
 
 def call(x: float) -> float:

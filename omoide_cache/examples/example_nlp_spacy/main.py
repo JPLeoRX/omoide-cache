@@ -1,5 +1,5 @@
 import time
-from simplecache.examples.example_nlp_spacy.spacy_service import SpacyService
+from omoide_cache.examples.example_nlp_spacy.spacy_service import SpacyService
 
 service = SpacyService()
 

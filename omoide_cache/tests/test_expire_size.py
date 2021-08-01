@@ -1,4 +1,4 @@
-from simplecache.cache import Cache, ExpireMode
+from omoide_cache.cache import Cache, ExpireMode
 
 
 def call(x: float) -> float:

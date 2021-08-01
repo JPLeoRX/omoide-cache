@@ -1,5 +1,5 @@
 import inspect
-from simplecache.cache import ExpireMode, RefreshMode, Cache
+from omoide_cache.cache import ExpireMode, RefreshMode, Cache
 
 
 # This is a very simple decorator version of the cache. It attached itself to the method, and proxies all requests to the method throught the cache
