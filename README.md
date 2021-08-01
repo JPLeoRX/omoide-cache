@@ -10,7 +10,7 @@ Customizable to suit your specific use-case, provides various expiry and refresh
 
 Very user-friendly, super easy to integrate with a simple decorator (i.e. annotation, for those coming from Java), no need to add complicated logic into your code, just use `@simplecache()` on top of any method in your services. It will auto-generate a cache for your method with default settings. You can further adjust these settings through decorator parameters.
 
-### When to use? This cache perfectly suits following conditions:
+### When to use?
 - You got a heavy call to the data source, where the data is read way more often than it is updated.
 - You have CPU intensive computation logic, that takes a few seconds to complete, but can is frequently called with same input parameters.
 
