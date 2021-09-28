@@ -7,7 +7,7 @@ with open("README.md", "r") as readme_file:
 
 setup_args = dict(
     name='omoide-cache',
-    version='0.1.1',
+    version='0.1.2',
     description="Robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.",
     keywords=['cache', 'decorator', 'annotation', 'in-memory'],
     license='Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License',
