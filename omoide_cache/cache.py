@@ -1,5 +1,6 @@
 import time
 import threading
+import traceback
 import operator
 from typing import List, Dict
 
@@ -181,13 +182,37 @@ class Cache:
         while len(self.results_map) > self.max_allowed_size:
             with self.results_map_lock and self.arguments_map_lock and self.last_computed_map_lock and self.last_accessed_map_lock and self.access_counter_map_lock:
                 key = self._find_key_to_remove_for_expire_max_size(last_accessed_key)
-                self.results_map.pop(key)
-                self.arguments_map.pop(key)
-                self.last_computed_map.pop(key)
-                self.last_accessed_map.pop(key)
-                self.access_counter_map.pop(key)
-                if self.debug:
-                    print('Cache._assert_expire_max_size(): Dropped ' + str(key))
+                dropped = False
+                number_of_tries = 0
+                while not dropped and number_of_tries < 10:
+                    # Try to drop the key, if a key error occurs (key is missing in one of the maps) - we need to try another key
+                    try:
+                        self.results_map.pop(key)
+                        self.arguments_map.pop(key)
+                        self.last_computed_map.pop(key)
+                        self.last_accessed_map.pop(key)
+                        self.access_counter_map.pop(key)
+                        dropped = True
+                    except KeyError as keyError:
+                        print('Cache._assert_expire_max_size(): WARNING! Failed to drop key ' + str(key) + ', will retry with new one')
+                        print('Cache._assert_expire_max_size(): WARNING! stacktrace:', traceback.format_exc())
+                        key = self._find_key_to_remove_for_expire_max_size(last_accessed_key)
+                        dropped = False
+                        number_of_tries = number_of_tries + 1
+
+                # If we failed each drop - clean the cache completely
+                if not dropped and number_of_tries >= 10:
+                    print('Cache._assert_expire_max_size(): WARNING! Cache has tried to drop keys for 10 times, yet each try failed. Will clean the cache completely now.')
+                    self.results_map = {}
+                    self.arguments_map = {}
+                    self.last_computed_map = {}
+                    self.last_accessed_map = {}
+                    self.access_counter_map = {}
+
+                # If drop was successful
+                else:
+                    if self.debug:
+                        print('Cache._assert_expire_max_size(): Dropped ' + str(key))
 
     def _assert_expire_by_computed_duration(self):
         # If expire by computed is enabled
