@@ -4,6 +4,6 @@
 
 # Introduction tutorial
 
-Read at Medium: 
+Read at Medium: https://medium.com/@leo.ertuna/omoide-cache-introduction-quick-and-easy-caching-in-python-13389b41bbfd
 
-Read at my blog: 
+Read at my blog: https://tekleo.net/blog/omoide-cache-introduction-quick-and-easy-caching-in-python

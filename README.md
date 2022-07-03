@@ -7,11 +7,11 @@ Caching doesn't need to be hard anymore. With just a few lines of code **Omoide 
 
 ---
 
-**Released Library**: https://pypi.org/project/omoide-cache/
+**Released Library**: [PyPI](https://pypi.org/project/omoide-cache/)
 
-**Source Code**: https://github.com/JPLeoRX/omoide-cache
+**Source Code**: [GitHub](https://github.com/JPLeoRX/omoide-cache)
 
-**Tutorial №1**: incoming...
+**Tutorial №1**: [my blog](https://tekleo.net/blog/omoide-cache-introduction-quick-and-easy-caching-in-python) or [Medium](https://medium.com/@leo.ertuna/omoide-cache-introduction-quick-and-easy-caching-in-python-13389b41bbfd) 
 
 ---
 
