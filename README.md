@@ -1,4 +1,8 @@
-# Omoide Cache
+<p align="center">
+  <a href="https://github.com/JPLeoRX/omoide-cache"><img src="https://raw.githubusercontent.com/JPLeoRX/omoide-cache/master/logo.png" alt="Omoide Cache"></a>
+</p>
+
+# Omoide Cache - Simple in-memory cache solution
 Caching doesn't need to be hard anymore. With just a few lines of code **Omoide Cache** will instantly bring your Python services to the next level!
 
 # Description
