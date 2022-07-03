@@ -5,6 +5,16 @@
 # Omoide Cache - Simple in-memory cache solution
 Caching doesn't need to be hard anymore. With just a few lines of code **Omoide Cache** will instantly bring your Python services to the next level!
 
+---
+
+**Released Library**: https://pypi.org/project/omoide-cache/
+
+**Source Code**: https://github.com/JPLeoRX/omoide-cache
+
+**Tutorial №1**: incoming...
+
+---
+
 # Description
 This is a robust, highly tunable and easy-to-integrate in-memory cache solution written in pure Python, with no dependencies.
 
